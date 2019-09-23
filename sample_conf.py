@@ -7,8 +7,8 @@ import json
 import os
 
 N = 12
-h = 280
-w = 420
+h = int(140 * 1.8)
+w = int(140 * 2.3)
 
 obj_imgs = []
 for i in range(N):

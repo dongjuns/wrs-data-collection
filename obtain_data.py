@@ -1,11 +1,8 @@
-import matplotlib
 import matplotlib.pyplot as plt
 import rospy
 from sensor_msgs.msg import Image
 import os
 import ros_numpy
-import time
-import asyncio
 
 last_img = None
 
