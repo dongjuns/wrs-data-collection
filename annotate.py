@@ -1,18 +1,20 @@
 import tkinter as tk
-from PIL import Image, ImageTk
+from PIL import Image, ImageTk, ImageEnhance
 import os
 import time
 
 
 class Annotater:
-    def __init__(self, obj_list, img_list, out_dir, size):
+    def __init__(self, obj_list, img_list, out_dir, img_size, disp_scaling=1.):
         self.img_list = img_list
         self.img_id = -1
         self.obj_list = obj_list
         self.obj_id = 0
+        self.disp_scaling = disp_scaling
 
         self.out_dir = out_dir
-        self.size = size
+        self.img_size = img_size
+        self.disp_size = [int(round(disp_scaling * v)) for v in img_size]
 
         self.orientation = None
         self.xs = None
@@ -22,11 +24,11 @@ class Annotater:
         self.img_path = None
 
         self.m = tk.Tk()
-        self.m.title("Paint mask using ovals")
+        self.m.title("Annotate")
         self.c = tk.Canvas(
             self.m,
-            width=size[0],
-            height=size[1]
+            width=self.disp_size[0],
+            height=self.disp_size[1]
         )
         self.c.pack(expand=tk.YES, fill=tk.BOTH)
         self.c.bind("<Motion>", self.mouse_move)
@@ -68,8 +70,13 @@ class Annotater:
         percentage /= len(self.img_list) * len(self.obj_list)
         print("{}% -- {} -- OBJ: {}, IMG: {}".format(int(percentage * 100), self.img_id, self.obj_id,
                                                      self.img_path.split('/')[-1]))
-        self.img = ImageTk.PhotoImage(Image.open(self.img_path))
-        self.c.create_image(self.size[0] // 2, self.size[1] // 2, image=self.img)
+
+        img = Image.open(self.img_path)  # type: Image.Image
+        img = img.resize(self.disp_size, Image.ANTIALIAS)
+        enhancer = ImageEnhance.Brightness(img)
+        img = enhancer.enhance(1)
+        self.img = ImageTk.PhotoImage(img)
+        self.c.create_image(self.disp_size[0] // 2, self.disp_size[1] // 2, image=self.img)
         self.c.update()
         return True
 
@@ -86,7 +93,8 @@ class Annotater:
         self.line = self.draw_line(e.x, e.y, color='red')
 
     def mouse_button(self, e):
-        (self.xs if self.vertical() else self.ys).append(e.x if self.vertical() else e.y)
+        v = int(round((e.x if self.vertical() else e.y) / self.disp_scaling))
+        (self.xs if self.vertical() else self.ys).append(v)
         self.draw_line(e.x, e.y, color='blue')
         self.orientation += 1
         if self.orientation == 4:
@@ -107,7 +115,7 @@ def main():
     rgb_list = sorted([rgb_dir + '/' + p for p in os.listdir(rgb_dir)])
     obj_list = sorted([obj_dir + '/' + p for p in os.listdir(obj_dir)])
 
-    Annotater(obj_list, rgb_list, out_dir, (1920, 1200))
+    Annotater(obj_list, rgb_list, out_dir, (1920, 1200), disp_scaling=0.6)
 
 
 if __name__ == '__main__':
